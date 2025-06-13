@@ -1,22 +1,50 @@
 import streamlit as st
-from pytrends.request import TrendReq
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-st.title("🎧 구글 트렌드로 알아보는 음악 검색 시간대")
+# 제목
+st.title("기상청 날씨 데이터 시각화")
 
-# 사용자 키워드 입력
-keywords = st.text_input("분석할 키워드를 쉼표로 입력하세요 (예: 멜론, 유튜브 뮤직, NewJeans)", "멜론, 유튜브 뮤직, NewJeans")
-keywords = [k.strip() for k in keywords.split(",")]
+# CSV 파일 불러오기
+@st.cache_data
+def load_data():
+    df = pd.read_csv("OBS_ASOS_ANL_20250613120855.csv", encoding='euc-kr')
+    return df
 
-# 트렌드 데이터 수집
-pytrends = TrendReq(hl='ko', tz=540)
-pytrends.build_payload(keywords, timeframe='now 7-d', geo='KR')
-df = pytrends.interest_over_time().reset_index()
-df['hour'] = df['date'].dt.hour
-hourly_avg = df.groupby('hour')[keywords].mean()
+df = load_data()
 
-# 시각화
-st.subheader("⏰ 시간대별 평균 검색 관심도")
-st.line_chart(hourly_avg)
+# 날짜 형식 변환
+df['일시'] = pd.to_datetime(df['일시'], errors='coerce')
+
+# 사이드바: 날짜 필터링
+st.sidebar.header("필터 설정")
+start_date = st.sidebar.date_input("시작 날짜", df['일시'].min())
+end_date = st.sidebar.date_input("끝 날짜", df['일시'].max())
+
+# 필터링
+mask = (df['일시'] >= pd.to_datetime(start_date)) & (df['일시'] <= pd.to_datetime(end_date))
+filtered_df = df.loc[mask]
+
+# 메인 화면
+st.subheader("필터링된 데이터")
+st.dataframe(filtered_df)
+
+# 기온 시각화
+if '기온(°C)' in df.columns:
+    st.subheader("기온 추이")
+    fig, ax = plt.subplots()
+    ax.plot(filtered_df['일시'], filtered_df['기온(°C)'], color='red')
+    ax.set_xlabel("날짜")
+    ax.set_ylabel("기온 (°C)")
+    ax.set_title("기온 변화")
+    st.pyplot(fig)
+
+# 강수량 시각화
+if '강수량(mm)' in df.columns:
+    st.subheader("강수량 추이")
+    fig2, ax2 = plt.subplots()
+    ax2.bar(filtered_df['일시'], filtered_df['강수량(mm)'], color='blue')
+    ax2.set_xlabel("날짜")
+    ax2.set_ylabel("강수량 (mm)")
+    ax2.set_title("강수량 변화")
+    st.pyplot(fig2)
