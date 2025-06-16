@@ -25,16 +25,27 @@ filtered_df = df.loc[mask]
 st.subheader("📄 필터링된 데이터")
 st.dataframe(filtered_df)
 
-if '기온(°C)' in filtered_df.columns:
+# 결측값 현황 출력
+st.sidebar.header("🔍 데이터 결측 현황")
+if '기온(°C)' in df.columns and '강수량(mm)' in df.columns:
+    missing_counts = df[['기온(°C)', '강수량(mm)']].isna().sum()
+    st.sidebar.write("**전체 데이터에서 결측값 개수**:")
+    st.sidebar.write(missing_counts)
+else:
+    st.sidebar.warning("⚠️ '기온(°C)' 또는 '강수량(mm)' 컬럼이 데이터에 없습니다.")
+
+# 시각화 - 기온
+if '기온(°C)' in filtered_df.columns and not filtered_df['기온(°C)'].dropna().empty:
     st.subheader("🌡️ 기온 변화 그래프")
     fig_temp = px.line(filtered_df, x='일시', y='기온(°C)', title="기온 추이", markers=True)
     st.plotly_chart(fig_temp)
 else:
-    st.warning("⚠️ '기온(°C)' 데이터가 없습니다.")
+    st.warning("⚠️ '기온(°C)' 데이터가 없거나 모든 값이 비어 있습니다.")
 
-if '강수량(mm)' in filtered_df.columns:
+# 시각화 - 강수량
+if '강수량(mm)' in filtered_df.columns and not filtered_df['강수량(mm)'].dropna().empty:
     st.subheader("🌧️ 강수량 변화 그래프")
     fig_rain = px.bar(filtered_df, x='일시', y='강수량(mm)', title="강수량 추이", color='강수량(mm)')
     st.plotly_chart(fig_rain)
 else:
-    st.warning("⚠️ '강수량(mm)' 데이터가 없습니다.")
+    st.warning("⚠️ '강수량(mm)' 데이터가 없거나 모든 값이 비어 있습니다.")
