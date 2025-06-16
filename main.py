@@ -14,25 +14,25 @@ def load_data():
 
 df = load_data()
 
-# 컬럼명 확인용 (디버깅용 필요 시 주석 제거)
+# 컬럼명 확인용 (디버깅용 필요 시 사용)
 # st.write(df.columns)
 
-# 날짜 필터
-st.sidebar.header("📅 날짜 범위 선택")
-start_date = st.sidebar.date_input("시작 날짜", df['일시'].min().date())
-end_date = st.sidebar.date_input("종료 날짜", df['일시'].max().date())
+# 자동 날짜 필터 설정
+start_date = df['일시'].min()
+end_date = df['일시'].max()
+filtered_df = df[(df['일시'] >= start_date) & (df['일시'] <= end_date)]
 
-mask = (df['일시'] >= pd.to_datetime(start_date)) & (df['일시'] <= pd.to_datetime(end_date))
-filtered_df = df.loc[mask]
+st.sidebar.success(f"자동 필터링 기간: {start_date.date()} ~ {end_date.date()}")
+st.sidebar.write("📌 필터된 데이터 수:", len(filtered_df))
 
-st.subheader("📄 필터링된 데이터")
+st.subheader("📄 전체 기간 데이터")
 st.dataframe(filtered_df)
 
 # 결측값 현황 출력
 st.sidebar.header("🔍 데이터 결측 현황")
 if '평균기온(°C)' in df.columns and '합계 강수량(mm)' in df.columns:
     missing_counts = df[['평균기온(°C)', '합계 강수량(mm)']].isna().sum()
-    st.sidebar.write("**전체 데이터에서 결측값 개수**:")
+    st.sidebar.write("**결측값 개수**")
     st.sidebar.write(missing_counts)
 else:
     st.sidebar.warning("⚠️ '평균기온(°C)' 또는 '합계 강수량(mm)' 컬럼이 데이터에 없습니다.")
